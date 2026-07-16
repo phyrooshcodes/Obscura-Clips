@@ -1,1 +1,0 @@
-# Obscura Clips — Module Package
