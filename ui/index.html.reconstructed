@@ -1,0 +1,1926 @@
+import json
+import re
+
+log_path = "/home/qwen/.gemini/antigravity-cli/brain/5470a5f6-37c6-4947-83bc-be2e3dc63dd3/.system_generated/logs/transcript_full.jsonl"
+lines_dict = {}
+
+with open(log_path, "r", encoding="utf-8") as f:
+    for line in f:
+        try:
+            step = json.loads(line)
+            # We want to extract lines from PLANNER_RESPONSE (tool calls) or SYSTEM (tool outputs)
+            content = step.get("content", "")
+            if not content:
+                continue
+            
+            # Check if this is a view_file output showing lines of index.html
+            # In the system response, the content contains the viewed text.
+            # Example: "Showing lines 1 to 300\nThe following code has been modified..."
+            if "Showing lines" in content and "index.html" in content.lower():
+                for match in re.finditer(r"^\s*(\d+):\s(.*)$", content, re.MULTILINE):
+                    line_num = int(match.group(1))
+                    line_text = match.group(2)
+                    lines_dict[line_num] = line_text
+        except Exception as e:
+            pass
+
+print(f"Extracted {len(lines_dict)} unique lines.")
+if lines_dict:
+    max_line = max(lines_dict.keys())
+    print(f"Max line number: {max_line}")
+    gaps = [i for i in range(1, max_line + 1) if i not in lines_dict]
+    print(f"Number of missing lines: {len(gaps)}")
+    if gaps:
+        print(f"Gaps: {gaps}")
+        
+    # Write the reconstructed file
+    reconstructed_text = ""
+    for i in range(1, max_line + 1):
+        if i in lines_dict:
+            reconstructed_text += lines_dict[i] + "\n"
+        else:
+            reconstructed_text += f"<!-- MISSING LINE {i} -->\n"
+            
+    with open("ui/index.html.reconstructed", "w", encoding="utf-8") as out:
+        out.write(reconstructed_text)
+    print("Wrote ui/index.html.reconstructed")
+else:
+    print("No lines extracted!")
+
+    }
+
+    /* ─── Animated BG ───────────────────────────────────── */
+    .bg-orbs {
+      position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      overflow: hidden;
+    }
+    .orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.12;
+      animation: orb-drift 20s ease-in-out infinite;
+    }
+    .orb-1 { width: 600px; height: 600px; background: #7c3aed; top: -200px; left: -100px; animation-delay: 0s; }
+    .orb-2 { width: 500px; height: 500px; background: #0ea5e9; bottom: -150px; right: -100px; animation-delay: -7s; }
+    .orb-3 { width: 350px; height: 350px; background: #ec4899; top: 40%; left: 50%; animation-delay: -14s; }
+    @keyframes orb-drift {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      33%       { transform: translate(40px, -30px) scale(1.05); }
+      66%       { transform: translate(-20px, 40px) scale(0.95); }
+    }
+
+    /* ─── Layout ────────────────────────────────────────── */
+    #app { position: relative; z-index: 1; min-height: 100vh; display: flex; flex-direction: column; }
+
+    /* ─── Header ────────────────────────────────────────── */
+    header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 20px 40px;
+      border-bottom: 1px solid var(--border-light);
+      background: rgba(6,10,20,0.8);
+      backdrop-filter: blur(20px);
+      position: sticky; top: 0; z-index: 100;
+    }
+    .logo {
+      display: flex; align-items: center; gap: 12px;
+    }
+    .logo-icon {
+      width: 38px; height: 38px;
+      background: var(--grad);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+      box-shadow: 0 4px 16px rgba(124,58,237,0.4);
+    }
+    .logo-text { font-size: 20px; font-weight: 800; letter-spacing: -0.5px; }
+    .logo-text span {
+      background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .header-badges { display: flex; gap: 8px; align-items: center; }
+    .badge {
+      font-size: 11px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase;
+      padding: 4px 10px; border-radius: 20px; border: 1px solid;
+    }
+    .badge-purple { color: var(--purple-light); border-color: rgba(124,58,237,0.4); background: rgba(124,58,237,0.1); }
+    .badge-cyan   { color: var(--cyan-light);   border-color: rgba(14,165,233,0.4);  background: rgba(14,165,233,0.1); }
+    .badge-green  { color: var(--green);         border-color: rgba(16,185,129,0.4);  background: rgba(16,185,129,0.1); }
+    #status-dot {
+      width: 8px; height: 8px; border-radius: 50%; background: var(--green);
+      box-shadow: 0 0 8px var(--green);
+      animation: pulse-dot 2s ease-in-out infinite;
+    }
+    @keyframes pulse-dot { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
+
+    /* ─── Main Content ──────────────────────────────────── */
+    main { flex: 1; padding: 40px; max-width: 1200px; margin: 0 auto; width: 100%; }
+
+    /* ─── Section Titles ────────────────────────────────── */
+    .section-header { margin-bottom: 28px; }
+    .section-header h2 { font-size: 26px; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 6px; }
+    .section-header p { color: var(--text2); font-size: 14px; }
+
+    /* ─── Panel switching ───────────────────────────────── */
+    .panel { display: none; }
+    .panel.active { display: block; animation: panel-in 0.4s ease; }
+    @keyframes panel-in { from{opacity:0;transform:translateY(16px);} to{opacity:1;transform:translateY(0);} }
+
+    /* ═══════════════════════════════════════════════════════
+       PANEL 1 — UPLOAD
+    ═══════════════════════════════════════════════════════ */
+    #panel-upload {}
+
+    .upload-hero { text-align: center; margin-bottom: 40px; }
+    .upload-hero h1 { font-size: 48px; font-weight: 900; letter-spacing: -2px; line-height: 1.1; margin-bottom: 12px; }
+    .upload-hero h1 span { background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .upload-hero p { color: var(--text2); font-size: 16px; max-width: 500px; margin: 0 auto; }
+
+    /* Drop Zone */
+    #dropzone {
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      background: var(--card);
+      padding: 60px 40px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    #dropzone::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: var(--grad);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    #dropzone:hover, #dropzone.drag-over {
+      border-color: var(--purple);
+      background: var(--purple-dim);
+      box-shadow: var(--shadow-glow);
+      transform: translateY(-2px);
+    }
+    #dropzone:hover::before, #dropzone.drag-over::before { opacity: 0.04; }
+    #dropzone.has-file {
+      border-color: var(--green);
+      border-style: solid;
+      background: rgba(16,185,129,0.05);
+    }
+    .drop-icon {
+      font-size: 52px; margin-bottom: 16px; display: block;
+      transition: transform 0.3s;
+    }
+    #dropzone:hover .drop-icon { transform: scale(1.1) translateY(-4px); }
+    .drop-title { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+    .drop-sub   { color: var(--text2); font-size: 14px; margin-bottom: 20px; }
+    .drop-btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--purple-dim); color: var(--purple-light);
+      border: 1px solid rgba(124,58,237,0.35);
+      padding: 10px 22px; border-radius: 8px;
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      transition: all 0.2s;
+    }
+    .drop-btn:hover { background: rgba(124,58,237,0.25); }
+    .file-info {
+      display: flex; align-items: center; gap: 12px;
+      background: rgba(16,185,129,0.08);
+      border: 1px solid rgba(16,185,129,0.3);
+      border-radius: var(--radius-sm);
+      padding: 14px 18px;
+      margin-top: 16px;
+      text-align: left;
+    }
+    .file-info-icon { font-size: 28px; }
+    .file-info-name { font-weight: 600; font-size: 14px; color: var(--green); }
+    .file-info-size { font-size: 12px; color: var(--text2); margin-top: 2px; }
+    #file-input { display: none; }
+
+    /* Settings */
+    .settings-card {
+      margin-top: 24px;
+      background: var(--card);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius);
+      padding: 24px 28px;
+    }
+    .settings-title {
+      font-size: 12px; font-weight: 700; letter-spacing: 1px;
+      text-transform: uppercase; color: var(--text3);
+      margin-bottom: 20px; display: flex; align-items: center; gap: 8px;
+    }
+    .settings-title::after { content: ''; flex: 1; height: 1px; background: var(--border-light); }
+    .settings-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; }
+    .setting-group label {
+      display: block; font-size: 12px; font-weight: 600;
+      color: var(--text2); text-transform: uppercase; letter-spacing: 0.5px;
+      margin-bottom: 10px;
+    }
+    /* Model pills */
+    .pill-group { display: flex; gap: 6px; }
+    .pill {
+      flex: 1; padding: 8px 4px; text-align: center;
+      border: 1px solid var(--border-light);
+      border-radius: 8px; font-size: 13px; font-weight: 600;
+      cursor: pointer; color: var(--text2);
+      background: transparent; transition: all 0.2s;
+    }
+    .pill.active { background: var(--purple-dim); border-color: var(--purple); color: var(--purple-light); }
+    .pill:hover:not(.active) { border-color: var(--text3); color: var(--text); }
+    /* Slider */
+    .slider-wrap { display: flex; align-items: center; gap: 12px; }
+    input[type=range] {
+      flex: 1; -webkit-appearance: none; height: 4px;
+      border-radius: 2px; background: var(--border-light); outline: none; cursor: pointer;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none; width: 16px; height: 16px;
+      border-radius: 50%; background: var(--purple); cursor: pointer;
+      box-shadow: 0 0 8px rgba(124,58,237,0.5);
+    }
+    .slider-val {
+      min-width: 28px; text-align: center;
+      font-size: 15px; font-weight: 700; color: var(--purple-light);
+    }
+    /* Language input */
+    .lang-input {
+      width: 100%; background: var(--bg3); border: 1px solid var(--border-light);
+      color: var(--text); border-radius: 8px; padding: 9px 14px;
+      font-size: 14px; outline: none; transition: border-color 0.2s;
+    }
+    .lang-input:focus { border-color: var(--purple); }
+    .lang-hint { font-size: 11px; color: var(--text3); margin-top: 5px; }
+
+    /* Generate Button */
+    #btn-generate {
+      margin-top: 28px; width: 100%;
+      background: var(--grad);
+      color: #fff; border: none; border-radius: var(--radius-sm);
+      font-size: 16px; font-weight: 700; letter-spacing: 0.3px;
+      padding: 18px; cursor: pointer;
+      position: relative; overflow: hidden;
+      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 4px 24px rgba(124,58,237,0.4);
+    }
+    #btn-generate:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(124,58,237,0.5); }
+    #btn-generate:active { transform: translateY(0); }
+    #btn-generate::after {
+      content: '';
+      position: absolute; top: -50%; left: -60%;
+      width: 40%; height: 200%;
+      background: rgba(255,255,255,0.15);
+      transform: skewX(-20deg);
+      transition: left 0.4s;
+    }
+    #btn-generate:hover::after { left: 120%; }
+    #btn-generate:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    /* Upload progress overlay */
+    #upload-progress {
+      display: none; margin-top: 16px;
+      background: var(--card); border: 1px solid var(--border-light);
+      border-radius: var(--radius-sm); padding: 16px 20px;
+    }
+    .progress-label { font-size: 13px; color: var(--text2); margin-bottom: 8px; display: flex; justify-content: space-between; }
+    .progress-bar-track { height: 6px; background: var(--border-light); border-radius: 3px; overflow: hidden; }
+    .progress-bar-fill {
+      height: 100%; border-radius: 3px;
+      background: var(--grad);
+      width: 0%; transition: width 0.1s;
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       PANEL 2 — PROCESSING
+    ═══════════════════════════════════════════════════════ */
+    #panel-processing {}
+    .processing-header {
+      display: flex; align-items: center; gap: 16px; margin-bottom: 32px;
+    }
+    .proc-video-name {
+      font-size: 14px; color: var(--text2);
+      background: var(--card); border: 1px solid var(--border-light);
+      border-radius: 8px; padding: 8px 16px; display: flex; align-items: center; gap: 8px;
+    }
+
+    /* Overall progress bar */
+    .pipeline-progress {
+      margin-bottom: 32px;
+      background: var(--card); border: 1px solid var(--border-light);
+      border-radius: var(--radius); padding: 20px 24px;
+    }
+    .pp-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .pp-label { font-size: 14px; font-weight: 600; }
+    .pp-pct   { font-size: 22px; font-weight: 800; background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .pp-bar   { height: 8px; background: var(--border-light); border-radius: 4px; overflow: hidden; }
+    .pp-fill  {
+      height: 100%; border-radius: 4px;
+      background: var(--grad);
+      width: 0%; transition: width 0.6s ease;
+      position: relative;
+    }
+    .pp-fill::after {
+      content: ''; position: absolute; top: 0; right: 0; bottom: 0;
+      width: 40px;
+      background: rgba(255,255,255,0.3);
+      animation: shimmer 1.5s ease-in-out infinite;
+    }
+    @keyframes shimmer { 0%{opacity:0;} 50%{opacity:1;} 100%{opacity:0;} }
+
+    /* Processing layout: stages left, log right */
+    .processing-body { display: grid; grid-template-columns: 340px 1fr; gap: 24px; }
+
+    /* Stage Cards */
+    .stages-panel {}
+    .stage-card {
+      display: flex; align-items: flex-start; gap: 14px;
+      background: var(--card); border: 1px solid var(--border-light);
+      border-radius: var(--radius-sm); padding: 14px 16px;
+      margin-bottom: 10px;
+      transition: all 0.3s ease;
+      opacity: 0.4;
+    }
+    .stage-card.active {
+      opacity: 1;
+      border-color: var(--purple);
+      background: rgba(124,58,237,0.07);
+      box-shadow: 0 0 20px rgba(124,58,237,0.2), inset 0 0 20px rgba(124,58,237,0.05);
+    }
+    .stage-card.done {
+      opacity: 1;
+      border-color: rgba(16,185,129,0.4);
+      background: rgba(16,185,129,0.04);
+    }
+    .stage-card.error {
+      opacity: 1;
+      border-color: rgba(239,68,68,0.4);
+      background: rgba(239,68,68,0.05);
+    }
+    .stage-icon {
+      font-size: 22px; flex-shrink: 0; margin-top: 2px;
+      transition: transform 0.3s;
+    }
+    .stage-card.active .stage-icon { animation: bounce-icon 1s ease-in-out infinite; }
+    @keyframes bounce-icon { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-4px);} }
+    .stage-body { flex: 1; min-width: 0; }
+    .stage-name { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+    .stage-hw {
+      font-size: 11px; font-weight: 500;
+      color: var(--text3); display: inline-block;
+      background: var(--border-light); border-radius: 4px;
+      padding: 2px 7px;
+    }
+    .stage-card.active .stage-hw { color: var(--purple-light); background: var(--purple-dim); }
+    .stage-card.done  .stage-hw { color: var(--green); background: rgba(16,185,129,0.12); }
+    .stage-status {
+      margin-left: auto; font-size: 18px; flex-shrink: 0;
+    }
+    .stage-card.active .stage-status::after { content: ''; display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: var(--purple); animation: status-pulse 1s ease-in-out infinite; }
+    .stage-card.done  .stage-status::after { content: '✓'; font-size: 14px; color: var(--green); font-weight: 800; }
+    @keyframes status-pulse { 0%,100%{transform:scale(1);opacity:1;} 50%{transform:scale(1.3);opacity:0.6;} }
+
+    /* Clip counter during processing */
+    .clip-counter {
+      display: none;
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: 14px 16px;
+      margin-top: 10px; text-align: center;
+    }
+    .clip-counter.visible { display: block; }
+    .clip-counter-num { font-size: 28px; font-weight: 800; background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .clip-counter-label { font-size: 12px; color: var(--text2); margin-top: 2px; }
+
+    /* Log Terminal */
+    .log-panel {
+      background: #050810; border: 1px solid var(--border-light);
+      border-radius: var(--radius); padding: 0; overflow: hidden;
+      display: flex; flex-direction: column; height: 460px;
+    }
+    .log-toolbar {
+      display: flex; align-items: center; gap: 6px; padding: 12px 16px;
+      background: rgba(255,255,255,0.02); border-bottom: 1px solid var(--border-light);
+    }
+    .log-dot { width: 10px; height: 10px; border-radius: 50%; }
+    .log-dot:nth-child(1) { background: #ff5f57; }
+    .log-dot:nth-child(2) { background: #ffbd2e; }
+    .log-dot:nth-child(3) { background: #28c840; }
+    .log-title { font-size: 12px; color: var(--text3); margin-left: 8px; font-family: 'JetBrains Mono', monospace; }
+    #log-output {
+      flex: 1; overflow-y: auto; padding: 16px;
+      font-family: 'JetBrains Mono', monospace; font-size: 12px; line-height: 1.7;
+      scroll-behavior: smooth;
+    }
+    #log-output::-webkit-scrollbar { width: 4px; }
+    #log-output::-webkit-scrollbar-track { background: transparent; }
+    #log-output::-webkit-scrollbar-thumb { background: var(--text3); border-radius: 2px; }
+    .log-line { color: #64748b; word-break: break-all; }
+    .log-line.stage  { color: #a78bfa; font-weight: 600; margin: 4px 0; }
+    .log-line.clip   { color: #38bdf8; font-weight: 600; margin: 4px 0; }
+    .log-line.done   { color: #10b981; }
+    .log-line.warn   { color: #f59e0b; }
+    .log-line.sub    { color: #94a3b8; }
+    .log-timestamp   { color: #2d3f55; margin-right: 8px; }
+
+    /* ═══════════════════════════════════════════════════════
+       PANEL 3 — RESULTS
+    ═══════════════════════════════════════════════════════ */
+    #panel-results {}
+    .results-hero {
+      text-align: center; margin-bottom: 40px;
+    }
+    .results-hero .big-check { font-size: 56px; display: block; margin-bottom: 16px; }
+    .results-hero h2 { font-size: 36px; font-weight: 900; letter-spacing: -1px; margin-bottom: 8px; }
+    .results-hero h2 span { background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .results-hero p { color: var(--text2); font-size: 15px; }
+    .results-actions { display: flex; gap: 12px; justify-content: center; margin-top: 20px; }
+    .btn-secondary {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--card); color: var(--text2);
+      border: 1px solid var(--border-light); padding: 12px 24px;
+      border-radius: 8px; font-size: 14px; font-weight: 600;
+      cursor: pointer; transition: all 0.2s; text-decoration: none;
+    }
+    .btn-secondary:hover { background: var(--card-hover); color: var(--text); border-color: var(--purple); }
+    .btn-primary {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--grad); color: #fff;
+      border: none; padding: 12px 24px;
+      border-radius: 8px; font-size: 14px; font-weight: 700;
+      cursor: pointer; transition: all 0.2s;
+      box-shadow: 0 4px 16px rgba(124,58,237,0.35);
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(124,58,237,0.45); }
+
+    /* Clips Grid */
+    .clips-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+    @media (max-width: 900px) { .clips-grid { grid-template-columns: repeat(2,1fr); } }
+    @media (max-width: 600px) { .clips-grid { grid-template-columns: 1fr; } }
+
+    .clip-card {
+      background: var(--card); border: 1px solid var(--border-light);
+      border-radius: var(--radius); overflow: hidden;
+      transition: all 0.3s ease;
+      position: relative;
+    }
+    .clip-card:hover {
+      border-color: var(--purple);
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-glow);
+    }
+    .clip-num-badge {
+      position: absolute; top: 12px; left: 12px; z-index: 2;
+      background: var(--grad); color: #fff;
+      font-size: 11px; font-weight: 800; letter-spacing: 0.5px;
+      padding: 3px 10px; border-radius: 20px;
+    }
+    .clip-video-wrap {
+      position: relative; background: #000;
+      aspect-ratio: 9/16; max-height: 300px; overflow: hidden;
+    }
+    .clip-video-wrap video {
+      width: 100%; height: 100%; object-fit: cover; display: block;
+    }
+    .clip-video-wrap .play-overlay {
+      position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+      background: rgba(0,0,0,0.4); opacity: 0; transition: opacity 0.2s; cursor: pointer;
+    }
+    .clip-card:hover .play-overlay { opacity: 1; }
+    .play-overlay .play-btn {
+      width: 52px; height: 52px; border-radius: 50%;
+      background: rgba(124,58,237,0.8); backdrop-filter: blur(8px);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+    .clip-info { padding: 14px 16px; }
+    .clip-title {
+      font-size: 13px; font-weight: 700; margin-bottom: 4px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .clip-meta { display: flex; align-items: center; gap: 8px; color: var(--text2); font-size: 12px; }
+    .clip-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: var(--text3); }
+    .clip-actions-row {
+      display: flex; gap: 8px; padding: 0 16px 16px;
+    }
+    .btn-download {
+      flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px;
+      background: var(--grad); color: #fff; text-decoration: none;
+      border-radius: 8px; padding: 9px; font-size: 13px; font-weight: 600;
+      transition: all 0.2s; box-shadow: 0 2px 12px rgba(124,58,237,0.3);
+    }
+    .btn-download:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(124,58,237,0.4); }
+    .btn-preview {
+      display: flex; align-items: center; justify-content: center;
+      width: 38px; height: 38px; border-radius: 8px;
+      background: var(--card-hover); border: 1px solid var(--border-light);
+      color: var(--text2); text-decoration: none; font-size: 16px;
+      transition: all 0.2s;
+    }
+    .btn-preview:hover { border-color: var(--cyan); color: var(--cyan-light); }
+
+    /* ─── Empty state ───────────────────────────────────── */
+    .empty-state {
+      text-align: center; padding: 60px 20px; color: var(--text3);
+    }
+    .empty-state .empty-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.5; }
+    .empty-state p { font-size: 15px; }
+
+    /* ─── Error banner ──────────────────────────────────── */
+    #error-banner {
+      display: none; margin-bottom: 16px;
+      background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.3);
+      border-radius: var(--radius-sm); padding: 14px 18px;
+      color: #fca5a5; font-size: 14px;
+    }
+
+    /* ─── Tab Switcher ────────────────────────────────── */
+    .tab-switcher {
+      display: flex; gap: 4px; margin-bottom: 20px;
+      background: var(--card); border: 1px solid var(--border-light);
+      border-radius: var(--radius-sm); padding: 4px;
+    }
+    .tab-btn {
+      flex: 1; padding: 11px 16px; border: none; border-radius: 7px;
+      font-size: 14px; font-weight: 600; cursor: pointer;
+      transition: all 0.2s; background: transparent; color: var(--text2);
+      font-family: 'Inter', sans-serif;
+    }
+    .tab-btn.active {
+      background: var(--purple-dim); color: var(--purple-light);
+      box-shadow: 0 2px 8px rgba(124,58,237,0.2);
+    }
+    .tab-btn:hover:not(.active) { color: var(--text); background: rgba(255,255,255,0.03); }
+
+    /* ─── URL Section ──────────────────────────────── */
+    #url-section { display: none; }
+    .url-box {
+      background: var(--card); border: 1px solid var(--border-light);
+      border-radius: var(--radius); padding: 32px;
+    }
+    .url-input-wrap { position: relative; margin-bottom: 16px; }
+    .url-input {
+      width: 100%; background: var(--bg3);
+      border: 2px solid var(--border-light);
+      color: var(--text); border-radius: var(--radius-sm);
+      padding: 16px 110px 16px 16px;
+      font-size: 15px; outline: none; transition: border-color 0.3s;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .url-input:focus { border-color: var(--purple); box-shadow: 0 0 0 3px rgba(124,58,237,0.12); }
+    .url-input::placeholder { color: var(--text3); font-size: 13px; }
+    .url-paste-btn {
+      position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+      background: var(--purple-dim); color: var(--purple-light);
+      border: 1px solid rgba(124,58,237,0.35); border-radius: 6px;
+      padding: 8px 14px; font-size: 12px; font-weight: 700; cursor: pointer;
+      transition: all 0.2s; font-family: 'Inter', sans-serif;
+    }
+    .url-paste-btn:hover { background: rgba(124,58,237,0.25); }
+    .platform-badge {
+      display: none; align-items: center; gap: 10px;
+      padding: 12px 16px; border-radius: var(--radius-sm);
+      border: 1px solid var(--border-light); background: var(--bg3);
+      margin-bottom: 16px; font-size: 13px; font-weight: 500;
+    }
+    .platform-badge.visible { display: flex; }
+    .platform-icon { font-size: 22px; }
+    .platform-name { font-weight: 700; }
+    .platform-url  { color: var(--text3); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 320px; font-family: 'JetBrains Mono', monospace; }
+    /* Download progress */
+    #dl-progress { display: none; margin-bottom: 16px; }
+    .dl-progress-label { display: flex; justify-content: space-between; align-items: baseline; font-size: 13px; margin-bottom: 8px; }
+    .dl-progress-label .dl-pct { font-size: 22px; font-weight: 800; background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .dl-stats { display: flex; gap: 16px; margin-top: 10px; flex-wrap: wrap; }
+    .dl-stat { font-size: 12px; color: var(--text2); }
+    .dl-stat strong { color: var(--cyan-light); }
+    /* yt-dlp log */
+    #dl-log {
+      background: #050810; border: 1px solid var(--border-light);
+      border-radius: var(--radius-sm); padding: 14px;
+      font-family: 'JetBrains Mono', monospace; font-size: 11px;
+      color: #475569; line-height: 1.6; max-height: 160px; overflow-y: auto;
+      display: none;
+    }
+    /* downloaded file card */
+    #dl-file-ready {
+      display: none; align-items: center; gap: 14px;
+      background: rgba(16,185,129,0.06); border: 1px solid rgba(16,185,129,0.3);
+      border-radius: var(--radius-sm); padding: 16px 18px;
+    }
+    #dl-file-ready.visible { display: flex; }
+    .dl-ready-icon { font-size: 32px; }
+    .dl-ready-name { font-weight: 700; font-size: 14px; color: var(--green); }
+    .dl-ready-meta { font-size: 12px; color: var(--text2); margin-top: 2px; }
+    /* Big download button */
+    #btn-download-url {
+      width: 100%; background: linear-gradient(135deg,#7c3aed,#0ea5e9);
+      color: #fff; border: none; border-radius: var(--radius-sm);
+      font-size: 15px; font-weight: 700; padding: 16px;
+      cursor: pointer; transition: all 0.2s;
+      box-shadow: 0 4px 20px rgba(124,58,237,0.35);
+      font-family: 'Inter', sans-serif;
+    }
+    #btn-download-url:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(124,58,237,0.45); }
+    #btn-download-url:disabled { opacity:0.5; cursor:not-allowed; transform:none; }
+
+    /* ─── Dashboard Layout ───────────────────────────── */
+    #dashboard-layout {
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      gap: 24px;
+      align-items: start;
+      margin-top: 20px;
+    }
+    @media (max-width: 1024px) {
+      #dashboard-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    .sidebar-card {
+      background: var(--card); border: 1px solid var(--border-light);
+      border-radius: var(--radius); padding: 18px 20px;
+    }
+    .sidebar-card-title {
+      font-size: 11px; font-weight: 700; letter-spacing: 1px;
+      text-transform: uppercase; color: var(--text2);
+      margin-bottom: 14px; display: flex; align-items: center; gap: 8px;
+    }
+    .sidebar-card-title::after { content: ''; flex: 1; height: 1px; background: var(--border-light); }
+    
+    .sidebar-list {
+    .recent-card-icon { font-size: 20px; }
+    .recent-card-body { min-width: 0; flex: 1; }
+    .recent-card-title {
+      font-size: 13px; font-weight: 600; color: var(--text);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .recent-card-size { font-size: 11px; color: var(--text2); margin-top: 2px; }
+
+    /* History card styling */
+    .history-card {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 10px 12px; border: 1px solid var(--border);
+      border-radius: var(--radius-sm); cursor: pointer; transition: all 0.2s;
+      background: var(--bg);
+    }
+    .history-card:hover {
+      border-color: var(--purple);
+      background: var(--purple-dim);
+    }
+    .history-card-icon { font-size: 16px; margin-top: 2px; }
+    .history-card-body { min-width: 0; flex: 1; }
+    .history-card-title {
+      font-size: 12.5px; font-weight: 600; color: var(--text);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .history-card-meta {
+      font-size: 11px; color: var(--text2); margin-top: 2px;
+      display: flex; justify-content: space-between;
+    }
+    .history-card-meta {
+      font-size: 11px; color: var(--text2); margin-top: 2px;
+      display: flex; justify-content: space-between;
+    }
+    
+    .empty-sidebar-list {
+      font-size: 12px; color: var(--text3); text-align: center; padding: 20px 0;
+    }
+
+    /* Scrollbar global ──────────────────────────────── */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--text3); border-radius: 3px; }
+  </style>
+</head>
+<body>
+
+
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+</div>
+
+<div id="app">
+
+  <!-- ─── Header ─────────────────────────────────────── -->
+  <header>
+    <div class="logo">
+      <div class="logo-icon">🎬</div>
+      <div>
+        <div class="logo-text">OBSCURA <span>CLIPS</span></div>
+      </div>
+    </div>
+    <div class="header-badges">
+      <span class="badge badge-purple">Llama 3.3 70B</span>
+      <span class="badge badge-cyan">NVENC</span>
+      <span class="badge badge-green">MediaPipe</span>
+      <div id="status-dot" title="Server online"></div>
+    </div>
+  </header>
+
+  <!-- ─── Main ───────────────────────────────────────── -->
+  <main>
+    <div id="error-banner">⚠ <span id="error-text"></span></div>
+
+    <!-- ══════════════════════════════
+         PANEL 1: UPLOAD
+    ══════════════════════════════ -->
+    <!-- Upload ================================================ -->
+    <div id="panel-upload" class="panel active">
+
+      <div class="upload-hero">
+        <h1>Turn long videos into<br/><span>viral clips</span> — automatically.</h1>
+        <p>Drop a file or paste a YouTube/TikTok/Instagram link. Llama 3.3 70B finds the best hooks. NVENC renders in seconds.</p>
+      </div>
+
+      <div id="dashboard-layout">
+        
+        <!-- Left Sidebar: History & Downloads -->
+        <aside id="dashboard-sidebar" style="display: flex; flex-direction: column; gap: 16px;">
+          
+          <!-- History Card -->
+          <div class="sidebar-card">
+            <div class="sidebar-card-title">🕰️ Clip History</div>
+            <div id="history-list" class="sidebar-list">
+              <div class="empty-sidebar-list">No processed videos yet</div>
+            </div>
+          </div>
+
+          <!-- Downloaded Videos Card -->
+          <div class="sidebar-card">
+            <div class="sidebar-card-title">📁 Downloaded Videos</div>
+            <div id="recent-list" class="sidebar-list">
+              <div class="empty-sidebar-list">No downloaded videos yet</div>
+            </div>
+          </div>
+
+        </aside>
+
+        <!-- Right Main Panel -->
+        <div id="dashboard-main" style="min-width: 0;">
+
+          <!-- Tab Switcher -->
+          <div class="tab-switcher">
+            <button class="tab-btn active" id="tab-file" onclick="switchTab('file')">📂 Upload File</button>
+            <button class="tab-btn"        id="tab-url"  onclick="switchTab('url')">🔗 Paste URL</button>
+          </div>
+
+          <!-- File Upload Section -->
+          <div id="file-section">
+            <!-- Drop Zone -->
+            <div id="dropzone">
+              <span class="drop-icon" id="drop-icon">🎥</span>
+              <div class="drop-title" id="drop-title">Drop your video here</div>
+              <div class="drop-sub" id="drop-sub">MP4, MOV, MKV — any length, any size</div>
+              <label for="file-input" class="drop-btn" id="drop-btn">📂 Browse File</label>
+              <div id="file-info" class="file-info" style="display:none;">
+                <div class="file-info-icon">🎞️</div>
+                <div>
+                  <div class="file-info-name" id="file-name-display">—</div>
+                  <div class="file-info-size" id="file-size-display">—</div>
+                </div>
+                <span style="margin-left:auto;font-size:22px;">✅</span>
+              </div>
+              <input type="file" id="file-input" accept="video/*" />
+            </div><!-- /dropzone -->
+          </div><!-- /file-section -->
+
+          <!-- URL Download Section -->
+          <div id="url-section">
+            <div class="url-box">
+
+              <!-- URL input -->
+              <div class="url-input-wrap">
+                <input type="text" class="url-input" id="url-input"
+                  placeholder="https://www.youtube.com/watch?v=... or TikTok, Instagram, X, Vimeo"
+                  oninput="onUrlInput(this.value)" />
+                <button class="url-paste-btn" onclick="pasteUrl()">📋 Paste</button>
+              </div>
+
+              <!-- Platform badge -->
+              <div class="platform-badge" id="platform-badge">
+                <span class="platform-icon" id="platform-icon">🌐</span>
+                <div>
+                  <div class="platform-name" id="platform-name">Video URL</div>
+                  <div class="platform-url"  id="platform-url"></div>
+                </div>
+              </div>
+
+              <!-- Download progress -->
+              <div id="dl-progress">
+                <div class="dl-progress-label">
+                  <span id="dl-label">Downloading...</span>
+                  <span class="dl-pct" id="dl-pct">0%</span>
+                </div>
+                <div class="progress-bar-track">
+                  <div class="progress-bar-fill" id="dl-fill"></div>
+                </div>
+                <div class="dl-stats">
+                  <div class="dl-stat">Speed: <strong id="dl-speed">—</strong></div>
+                  <div class="dl-stat">ETA: <strong id="dl-eta">—</strong></div>
+                  <div class="dl-stat">Size: <strong id="dl-size">—</strong></div>
+                </div>
+              </div>
+
+              <!-- yt-dlp log -->
+              <div id="dl-log"></div>
+
+              <!-- Downloaded file ready card -->
+              <div id="dl-file-ready">
+                <div class="dl-ready-icon">🎞️</div>
+                <div>
+                  <div class="dl-ready-name" id="dl-ready-name">—</div>
+                  <div class="dl-ready-meta" id="dl-ready-meta">—</div>
+                </div>
+                <span style="margin-left:auto;font-size:24px;">✅</span>
+              </div>
+
+              <!-- Download button -->
+              <button id="btn-download-url" style="margin-top:16px;" disabled onclick="startYtdlDownload()">
+                ⬇ Download Video
+              </button>
+
+            </div>
+          </div><!-- /url-section -->
+
+          <!-- Settings -->
+          <div class="settings-card">
+            <div class="settings-title">⚙ Pipeline Settings</div>
+            <div class="settings-grid">
+
+              <!-- Model -->
+              <div class="setting-group">
+                </div>
+                <span style="margin-left:auto;font-size:24px;">✅</span>
+              </div>
+
+              <!-- Download button -->
+              <button id="btn-download-url" style="margin-top:16px;" disabled onclick="startYtdlDownload()">
+                ⬇ Download Video
+              </button>
+
+              </div>
+
+              <!-- Max Clips -->
+              <div class="setting-group">
+                <label>✂ Max Clips</label>
+                <div class="slider-wrap">
+                  <input type="range" id="slider-clips" min="1" max="30" value="8" />
+                  <span class="slider-val" id="val-clips">8</span>
+                </div>
+                <div class="lang-hint" style="margin-top:10px;">
+                  Nemotron selects the top <span id="hint-clips">8</span> viral moments
+                  <span id="hint-clips-warn" style="display:none; color:#f59e0b; font-weight:600;"> — longer processing time</span>
+                </div>
+              </div>
+
+              <!-- Language -->
+              <div class="setting-group">
+                <label>🌐 Language</label>
+                <input type="text" class="lang-input" id="lang-input" placeholder="auto-detect" maxlength="5" />
+                <div class="lang-hint">e.g. en, hi, es, fr — leave blank for auto</div>
+              </div>
+
+            </div>
+          </div>
+
+          <div class="settings-card" style="margin-top:16px;">
+                  <span class="slider-val" id="val-clips">8</span>
+                </div>
+                <div class="lang-hint" style="margin-top:10px;">
+                  Nemotron selects the top <span id="hint-clips">8</span> viral moments
+                  <span id="hint-clips-warn" style="display:none; color:#f59e0b; font-weight:600;"> — longer processing time</span>
+                </div>
+              </div>
+
+              <!-- Language -->
+              <div class="setting-group">
+                <label>🌐 Language</label>
+                <input type="text" class="lang-input" id="lang-input" placeholder="auto-detect" maxlength="5" />
+                <div class="lang-hint">e.g. en, hi, es, fr — leave blank for auto</div>
+              </div>
+
+            </div>
+          </div>
+
+          <div class="settings-card" style="margin-top:16px;">
+            <div class="setting-group">
+              <label>🎵 Background Music Vibe</label>
+              <select id="music-select" class="lang-input" style="width: 100%; background: var(--bg3); border: 1px solid var(--border-light); color: var(--text); border-radius: 8px; padding: 9px 14px; font-size: 14px; outline: none; transition: border-color 0.2s;">
+                <option value="none">None (Original Audio Only)</option>
+                <option value="auto">Smart Mix (Auto-match from Library)</option>
+                <option value="ambient">Inspiring Ambient (Soft Piano & Pads)</option>
+                <option value="lofi">Chill Lofi Beat (Conversational/Cozy)</option>
+                <option value="focus">Deep Focus Synth (Calm & Minimal)</option>
+              </select>
+              <div class="lang-hint" style="margin-top:8px;">
+                Speech stays in front with automated voice-ducking sidechain compression.
+              </div>
+            </div>
+          </div>
+
+          <!-- Generate Button -->
+<!-- MISSING LINE 921 -->
+<!-- MISSING LINE 922 -->
+<!-- MISSING LINE 923 -->
+<!-- MISSING LINE 924 -->
+<!-- MISSING LINE 925 -->
+<!-- MISSING LINE 926 -->
+<!-- MISSING LINE 927 -->
+<!-- MISSING LINE 928 -->
+<!-- MISSING LINE 929 -->
+<!-- MISSING LINE 930 -->
+<!-- MISSING LINE 931 -->
+<!-- MISSING LINE 932 -->
+<!-- MISSING LINE 933 -->
+<!-- MISSING LINE 934 -->
+<!-- MISSING LINE 935 -->
+<!-- MISSING LINE 936 -->
+<!-- MISSING LINE 937 -->
+<!-- MISSING LINE 938 -->
+<!-- MISSING LINE 939 -->
+<!-- MISSING LINE 940 -->
+<!-- MISSING LINE 941 -->
+<!-- MISSING LINE 942 -->
+<!-- MISSING LINE 943 -->
+<!-- MISSING LINE 944 -->
+<!-- MISSING LINE 945 -->
+<!-- MISSING LINE 946 -->
+<!-- MISSING LINE 947 -->
+<!-- MISSING LINE 948 -->
+<!-- MISSING LINE 949 -->
+<!-- MISSING LINE 950 -->
+<!-- MISSING LINE 951 -->
+<!-- MISSING LINE 952 -->
+<!-- MISSING LINE 953 -->
+<!-- MISSING LINE 954 -->
+<!-- MISSING LINE 955 -->
+<!-- MISSING LINE 956 -->
+<!-- MISSING LINE 957 -->
+<!-- MISSING LINE 958 -->
+<!-- MISSING LINE 959 -->
+<!-- MISSING LINE 960 -->
+<!-- MISSING LINE 961 -->
+<!-- MISSING LINE 962 -->
+<!-- MISSING LINE 963 -->
+<!-- MISSING LINE 964 -->
+<!-- MISSING LINE 965 -->
+<!-- MISSING LINE 966 -->
+<!-- MISSING LINE 967 -->
+<!-- MISSING LINE 968 -->
+<!-- MISSING LINE 969 -->
+<!-- MISSING LINE 970 -->
+<!-- MISSING LINE 971 -->
+<!-- MISSING LINE 972 -->
+<!-- MISSING LINE 973 -->
+<!-- MISSING LINE 974 -->
+<!-- MISSING LINE 975 -->
+<!-- MISSING LINE 976 -->
+<!-- MISSING LINE 977 -->
+<!-- MISSING LINE 978 -->
+<!-- MISSING LINE 979 -->
+              <div style="background: linear-gradient(135deg, #0ea5e9, #2563eb); padding: 8px; border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+                <span style="font-size: 20px;">🧠</span>
+              </div>
+              <div>
+                <div style="font-size: 14px; font-weight: 800; color: var(--text);">NVIDIA NIM API Key</div>
+                <div style="font-size: 11px; color: var(--text2);">Required for AI viral hook and transcript analysis</div>
+              </div>
+              <div style="margin-left: auto;" id="nvidia-status-badge">
+                <span style="background: rgba(239,68,68,0.15); color: #ef4444; border: 1px solid rgba(239,68,68,0.3); padding: 2px 8px; border-radius: 20px; font-size: 10px; font-weight: 700;">⚠️ Not Set</span>
+              </div>
+            </div>
+            <div class="setting-group" style="margin-top: 8px;">
+              <label>🔑 NVIDIA API Key <a href="https://build.nvidia.com/" target="_blank" style="color: var(--cyan-light); font-size: 10px; text-decoration: none;">(Get free API credits →)</a></label>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <input type="password" id="nvidia-key-input" class="lang-input" placeholder="Paste your nvapi-XXXX key here" style="flex: 1;" />
+                <button onclick="const inp = document.getElementById('nvidia-key-input'); inp.type = inp.type === 'password' ? 'text' : 'password'; this.textContent = inp.type === 'password' ? '👁' : '🙈';" style="background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; cursor: pointer; font-size: 14px;">👁</button>
+                <button id="btn-save-nvidia" onclick="saveNvidiaKey()" style="background: linear-gradient(135deg, #0ea5e9, #2563eb); color: #fff; border: none; border-radius: 6px; padding: 7px 12px; cursor: pointer; font-size: 12px; font-weight: 700; transition: all 0.2s;">Save</button>
+              </div>
+              <div class="lang-hint" style="margin-top: 6px;" id="nvidia-hint">
+                Once saved, your key is permanently written to the backend server config (`.env` file) and will persist across runs.
+              </div>
+            </div>
+          </div>
+
+          <!-- B-Roll Overlay Settings -->
+          <div class="settings-card" style="margin-top:16px; border: 1px solid rgba(124,58,237,0.2);">
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+              <div style="background: linear-gradient(135deg, #7c3aed, #0ea5e9); padding: 8px; border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+                <span style="font-size: 20px;">🎬</span>
+              </div>
+              <div>
+                <div style="font-size: 14px; font-weight: 800; color: var(--text);">AI B-Roll Overlays</div>
+                <div style="font-size: 11px; color: var(--text2);">Auto-inject cinematic stock footage with Ken Burns transitions</div>
+              </div>
+              <div style="margin-left: auto;">
+                <label class="toggle-switch" style="position: relative; display: inline-block; width: 44px; height: 24px;">
+                  <input type="checkbox" id="broll-toggle" style="opacity: 0; width: 0; height: 0;">
+                  <span style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--bg3); border: 1px solid var(--border); border-radius: 24px; transition: 0.3s;" onclick="updateBrollUI(!document.getElementById('broll-toggle').checked);"></span>
+                </label>
+              </div>
+            </div>
+            <div id="broll-key-group" style="display: none;">
+              <div class="setting-group" style="margin-top: 8px;">
+                <label>🔑 Pexels API Key <a href="https://www.pexels.com/api/" target="_blank" style="color: var(--purple-light); font-size: 10px; text-decoration: none;">(Get free key →)</a></label>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <input type="password" id="pexels-key-input" class="lang-input" placeholder="Paste your Pexels API key here" oninput="localStorage.setItem('pexels_api_key', this.value.trim())" style="flex: 1;" />
+                  <button onclick="const inp = document.getElementById('pexels-key-input'); inp.type = inp.type === 'password' ? 'text' : 'password'; this.textContent = inp.type === 'password' ? '👁' : '🙈';" style="background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; cursor: pointer; font-size: 14px;">👁</button>
+                </div>
+                <div class="lang-hint" style="margin-top: 6px;">
+                  AI will detect key visual moments in each clip and overlay matching stock footage with smooth Ken Burns zoom, alpha fades, and cinematic transitions. Your key is permanently saved locally in your browser's secure storage.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Generate Button -->
+          <button id="btn-generate" disabled>
+            🚀 Generate Clips
+          </button>
+
+          <!-- Upload Progress -->
+          <div id="upload-progress">
+            <div class="progress-label">
+              <span>Uploading video to server...</span>
+              <span id="upload-pct">0%</span>
+            </div>
+<script>
+// ── State ─────────────────────────────────────────────────
+let selectedFile = null;
+let jobId        = null;
+let ytdlJobId    = null;   // set when video came from yt-dlp (no upload needed)
+let ws           = null;
+let currentStage = 0;
+let clipsDone    = 0;
+let clipsTotal   = 0;
+
+// Stage progress percentages (cumulative)
+const STAGE_PCT = {1: 8, 2: 30, 3: 50, 4: 58, 5: 72, 6: 95};
+const STAGE_LABELS = {
+  1: 'Extracting audio…',
+  2: 'Transcribing with Whisper…',
+  3: 'Detecting hooks with Llama 3.3 70B…',
+  4: 'Tracking face with MediaPipe…',
+  5: 'Generating kinetic subtitles…',
+  6: 'Rendering with NVENC…',
+};
+
+// ── Panel switching ────────────────────────────────────────
+function showPanel(id) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ── File selection ─────────────────────────────────────────
+const dropzone  = document.getElementById('dropzone');
+const fileInput = document.getElementById('file-input');
+
+dropzone.addEventListener('click', e => {
+  if (e.target.tagName !== 'LABEL' && e.target.tagName !== 'INPUT') {
+    fileInput.click();
+  }
+});
+
+dropzone.addEventListener('dragover', e => {
+  e.preventDefault(); dropzone.classList.add('drag-over');
+});
+dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-over'));
+dropzone.addEventListener('drop', e => {
+  e.preventDefault(); dropzone.classList.remove('drag-over');
+  const f = e.dataTransfer.files[0];
+  if (f) setFile(f);
+}
+
+// ── File selection ─────────────────────────────────────────
+const dropzone  = document.getElementById('dropzone');
+const fileInput = document.getElementById('file-input');
+
+dropzone.addEventListener('click', e => {
+  if (e.target.tagName !== 'LABEL' && e.target.tagName !== 'INPUT') {
+    fileInput.click();
+  }
+});
+
+dropzone.addEventListener('dragover', e => {
+  e.preventDefault(); dropzone.classList.add('drag-over');
+});
+dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-over'));
+dropzone.addEventListener('drop', e => {
+  e.preventDefault(); dropzone.classList.remove('drag-over');
+  const f = e.dataTransfer.files[0];
+  if (f) setFile(f);
+});
+
+fileInput.addEventListener('change', () => {
+  if (fileInput.files[0]) setFile(fileInput.files[0]);
+});
+
+function setFile(f) {
+  selectedFile = f;
+  dropzone.classList.add('has-file');
+
+  document.getElementById('drop-icon').style.display = 'none';
+  document.getElementById('drop-title').style.display = 'none';
+  document.getElementById('drop-sub').style.display = 'none';
+  document.getElementById('drop-btn').style.display = 'none';
+
+  const info = document.getElementById('file-info');
+  info.style.display = 'flex';
+  document.getElementById('file-name-display').textContent = f.name;
+  document.getElementById('file-size-display').textContent = formatBytes(f.size);
+
+  document.getElementById('btn-generate').disabled = false;
+}
+
+function formatBytes(b) {
+  if (b < 1024*1024) return (b/1024).toFixed(1) + ' KB';
+  if (b < 1024*1024*1024) return (b/1024/1024).toFixed(1) + ' MB';
+  return (b/1024/1024/1024).toFixed(2) + ' GB';
+}
+
+// ── Settings ───────────────────────────────────────────────
+// Model pills
+document.querySelectorAll('#model-pills .pill').forEach(p => {
+  p.addEventListener('click', () => {
+    document.querySelectorAll('#model-pills .pill').forEach(x => x.classList.remove('active'));
+    p.classList.add('active');
+  });
+});
+function getModel() {
+  return document.querySelector('#model-pills .pill.active').dataset.val;
+}
+
+function getMusic() {
+  return document.getElementById('music-select').value;
+}
+
+async function loadMusicTracks() {
+  try {
+    const res = await fetch('/api/music/tracks');
+    const tracks = await res.json();
+    const sel = document.getElementById('music-select');
+    if (!sel) return;
+    
+    // Clear dynamic options while preserving the default templates
+    sel.innerHTML = `
+
+// Initial load
+loadMusicTracks();
+
+// Clips slider
+const sliderClips = document.getElementById('slider-clips');
+sliderClips.addEventListener('input', () => {
+  const v = parseInt(sliderClips.value);
+  document.getElementById('val-clips').textContent = v;
+  document.getElementById('hint-clips').textContent = v;
+  document.getElementById('hint-clips-warn').style.display = v > 15 ? 'inline' : 'none';
+});
+
+// ── Tab Switching ────────────────────────────────────────────
+function switchTab(tab) {
+  const isFile = (tab === 'file');
+  document.getElementById('file-section').style.display = isFile ? '' : 'none';
+  document.getElementById('url-section').style.display  = isFile ? 'none' : 'block';
+  document.getElementById('tab-file').classList.toggle('active', isFile);
+  document.getElementById('tab-url').classList.toggle('active', !isFile);
+  // Reset generate button state for the new tab
+  const canGo = isFile ? !!selectedFile : !!ytdlJobId;
+  document.getElementById('btn-generate').disabled = !canGo;
+  document.getElementById('btn-generate').textContent = '🚀 Generate Clips';
+}
+
+// ── URL Input ───────────────────────────────────────────
+function onUrlInput(val) {
+  const trimmed = val.trim();
+  const badge   = document.getElementById('platform-badge');
+  if (!trimmed || !trimmed.startsWith('http')) {
+    badge.classList.remove('visible');
+    document.getElementById('btn-download-url').disabled = true;
+    return;
+  }
+  const p = detectPlatform(trimmed);
+  document.getElementById('platform-icon').textContent = p.icon;
+  document.getElementById('platform-name').textContent = p.name;
+  document.getElementById('platform-url').textContent  = trimmed;
+  badge.classList.add('visible');
+  // Only enable download btn if no download in progress and not already done
+  const canGo = isFile ? !!selectedFile : !!ytdlJobId;
+  document.getElementById('btn-generate').disabled = !canGo;
+  document.getElementById('btn-generate').textContent = '🚀 Generate Clips';
+}
+
+// ── URL Input ───────────────────────────────────────────
+function onUrlInput(val) {
+  const trimmed = val.trim();
+  const badge   = document.getElementById('platform-badge');
+  if (!trimmed || !trimmed.startsWith('http')) {
+    badge.classList.remove('visible');
+    document.getElementById('btn-download-url').disabled = true;
+    return;
+  }
+  const p = detectPlatform(trimmed);
+  document.getElementById('platform-icon').textContent = p.icon;
+  document.getElementById('platform-name').textContent = p.name;
+  document.getElementById('platform-url').textContent  = trimmed;
+  badge.classList.add('visible');
+  // Only enable download btn if no download in progress and not already done
+  if (!ytdlJobId) {
+    document.getElementById('btn-download-url').disabled = false;
+    document.getElementById('btn-download-url').textContent = '⬇ Download Video';
+  }
+}
+
+async function pasteUrl() {
+  try {
+    const text = await navigator.clipboard.readText();
+    const input = document.getElementById('url-input');
+    input.value = text;
+    onUrlInput(text);
+  } catch(e) {
+    // Clipboard API blocked — just focus the input
+    document.getElementById('url-input').focus();
+  }
+}
+
+function detectPlatform(url) {
+  if (/youtu\.?be/i.test(url))          return { icon: '▶',  name: 'YouTube'    };
+  if (/tiktok/i.test(url))              return { icon: '♪',  name: 'TikTok'     };
+  if (/instagram/i.test(url))           return { icon: '◈',  name: 'Instagram'  };
+  if (/twitter\.com|x\.com/i.test(url)) return { icon: '✗',  name: 'X / Twitter'};
+  if (/vimeo/i.test(url))               return { icon: '▷',  name: 'Vimeo'      };
+  if (/facebook/i.test(url))            return { icon: 'f',  name: 'Facebook'   };
+  if (/twitch/i.test(url))              return { icon: '🎮', name: 'Twitch'     };
+  return { icon: '🌐', name: 'Video URL' };
+}
+
+// ── yt-dlp Download Flow ───────────────────────────────────
+async function startYtdlDownload() {
+  const url = document.getElementById('url-input').value.trim();
+  if (!url) return;
+
+  // Lock the UI
+  document.getElementById('btn-download-url').disabled = true;
+  document.getElementById('btn-download-url').textContent = '⏳ Downloading…';
+  document.getElementById('dl-progress').style.display = 'block';
+  document.getElementById('dl-log').style.display      = 'block';
+  document.getElementById('dl-log').innerHTML          = '';
+  document.getElementById('dl-fill').style.width       = '0%';
+  document.getElementById('dl-pct').textContent        = '0%';
+  document.getElementById('dl-file-ready').classList.remove('visible');
+  hideError();
+
+  try {
+    // Get a job_id from server
+    const res  = await fetch('/prepare-download', { method: 'POST' });
+    const data = await res.json();
+    const jid  = data.job_id;
+
+    const wsUrl = `ws://localhost:7842/ws-ytdl/${jid}?url=${encodeURIComponent(url)}`;
+    const dlWs  = new WebSocket(wsUrl);
+
+    dlWs.onmessage = e => handleYtdlEvent(JSON.parse(e.data), jid);
+    dlWs.onerror   = () => showError('Download WebSocket error. Is the server running?');
+  } catch(err) {
+    showError('Download failed: ' + err.message);
+    document.getElementById('btn-download-url').disabled = false;
+    document.getElementById('btn-download-url').textContent = '⬇ Download Video';
+  }
+}
+
+function handleYtdlEvent(ev, jid) {
+  switch(ev.type) {
+
+    case 'ytdl_start':
+      appendDlLog('Starting yt-dlp download...');
+      break;
+
+    case 'ytdl_progress':
+      const pct = Math.min(99, ev.percent);
+      document.getElementById('dl-fill').style.width  = pct + '%';
+      document.getElementById('dl-pct').textContent   = pct.toFixed(1) + '%';
+      document.getElementById('dl-speed').textContent = ev.speed  || '—';
+      document.getElementById('dl-eta').textContent   = ev.eta    || '—';
+      document.getElementById('dl-size').textContent  = ev.size   || '—';
+      document.getElementById('dl-label').textContent = 'Downloading…';
+      break;
+
+    case 'ytdl_log':
+      if (ev.raw) appendDlLog(ev.raw);
+      break;
+
+    case 'ytdl_done':
+      // Download complete — register job and enable pipeline
+      ytdlJobId = jid;
+      document.getElementById('dl-fill').style.width  = '100%';
+      document.getElementById('dl-pct').textContent   = '100%';
+      document.getElementById('dl-label').textContent = 'Download complete!';
+
+      // Show file ready card
+      document.getElementById('dl-file-ready').classList.add('visible');
+      document.getElementById('dl-ready-name').textContent = ev.filename;
+      document.getElementById('dl-ready-meta').textContent = ev.size_mb + ' MB • Ready for pipeline';
+
+      // Update btn-download-url to show success
+      document.getElementById('btn-download-url').textContent = '✅ Downloaded — Click Generate Clips below!';
+      document.getElementById('btn-download-url').style.background = 'linear-gradient(135deg,#059669,#10b981)';
+
+      // Enable the main generate button
+      document.getElementById('btn-generate').disabled = false;
+      appendDlLog('✅ Downloaded: ' + ev.filename + ' (' + ev.size_mb + ' MB)');
+      break;
+
+    case 'error':
+      showError(ev.message);
+      document.getElementById('btn-download-url').disabled = false;
+      document.getElementById('btn-download-url').textContent = '⬇ Download Video';
+      break;
+  }
+}
+
+function appendDlLog(text) {
+  const log = document.getElementById('dl-log');
+  log.textContent += text + '\n';
+  log.scrollTop = log.scrollHeight;
+}
+
+// ── Generate ───────────────────────────────────────────────
+document.getElementById('btn-generate').addEventListener('click', startPipeline);
+
+async function startPipeline() {
+  const isUrlMode = !!ytdlJobId;
+  hideError();
+
+  try {
+    if (isUrlMode) {
+      // Video already on server from yt-dlp — skip upload entirely
+      jobId = ytdlJobId;
+      localStorage.setItem('activeJobId', jobId);
+      const filename = document.getElementById('dl-ready-name').textContent || 'video.mp4';
+      document.getElementById('proc-filename').textContent = filename;
+    } else {
+      // Upload the local file first
+      btn.textContent = '⏳ Uploading…';
+      document.getElementById('upload-progress').style.display = 'block';
+      jobId = await uploadFileXHR(selectedFile);
+      localStorage.setItem('activeJobId', jobId);
+      document.getElementById('proc-filename').textContent = selectedFile.name;
+    }
+
+    // Switch to processing panel
+    showPanel('panel-processing');
+    resetStages();
+    clearLog();
+
+    // Open pipeline WebSocket
+        const model    = getModel();
+    const maxClips = document.getElementById('slider-clips').value;
+    const lang     = document.getElementById('lang-input').value.trim();
+    const music    = getMusic();
+    const captionStyle = document.getElementById('caption-style-select').value;
+    const fontPreset = document.getElementById('font-preset-select').value;
+    const noTitle = !document.getElementById('title-banner-check').checked;
+    const fontName = document.getElementById('custom-font-name').value.trim();
+    const fontSize = document.getElementById('slider-font-size').value;
+    const primaryColor = document.getElementById('color-primary').value;
+    const outlineColor = document.getElementById('color-outline').value;
+    const brollEnabled = document.getElementById('broll-toggle').checked;
+    const pexelsKey = document.getElementById('pexels-key-input').value.trim();
+    const wsUrl    = `ws://localhost:7842/ws/${jobId}?model=${model}&max_clips=${maxClips}&language=${encodeURIComponent(lang)}&music=${music}&caption_style=${captionStyle}&font_preset=${fontPreset}&no_title=${noTitle}&font_name=${encodeURIComponent(fontName)}&font_size=${fontSize}&primary_color=${encodeURIComponent(primaryColor)}&outline_color=${encodeURIComponent(outlineColor)}&broll=${brollEnabled}&pexels_key=${encodeURIComponent(pexelsKey)}`;
+    ws = new WebSocket(wsUrl);
+
+    ws.onmessage = e => handleEvent(JSON.parse(e.data));
+    ws.onerror   = () => showError('WebSocket connection lost. Is the server running?');
+    ws.onclose   = () => {};
+
+  } catch(err) {
+    showError((isUrlMode ? 'Pipeline' : 'Upload') + ' failed: ' + err.message);
+    btn.disabled = false;
+    btn.textContent = '🚀 Generate Clips';
+    document.getElementById('upload-progress').style.display = 'none';
+  }
+}
+
+function uploadFileXHR(file) {
+  return new Promise((resolve, reject) => {
+    const fd  = new FormData();
+    fd.append('file', file);
+
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', '/upload');
+
+    xhr.upload.onprogress = e => {
+      if (!e.lengthComputable) return;
+      const pct = Math.round((e.loaded / e.total) * 100);
+      document.getElementById('upload-pct').textContent = pct + '%';
+      document.getElementById('upload-fill').style.width  = pct + '%';
+    };
+
+    xhr.onload = () => {
+      if (xhr.status === 200) {
+        const data = JSON.parse(xhr.responseText);
+        resolve(data.job_id);
+  });
+}
+
+// ── WebSocket event handler ────────────────────────────────
+function handleEvent(ev) {
+  switch (ev.type) {
+
+    case 'start':
+      appendLog('Pipeline started…', 'sub');
+      break;
+
+    case 'stage': {
+      const s = ev.stage;
+      activateStage(s);
+      setProgress(STAGE_PCT[s] || 0, STAGE_LABELS[s] || ev.label);
+      appendLog('▸ STAGE ' + s + '/6 — ' + ev.label, 'stage');
+      break;
+    }
+
+    case 'substage':
+      appendLog('  [' + ev.substage + '/6] ' + ev.label, 'sub');
+      break;
+
+    case 'clip_start':
+      clipsTotal = ev.total;
+      document.getElementById('clip-counter').classList.add('visible');
+      document.getElementById('cc-current').textContent = ev.clip_num - 1;
+      document.getElementById('cc-total').textContent   = ev.total;
+      appendLog('◆ CLIP ' + ev.clip_num + ' / ' + ev.total, 'clip');
+      // Activate stages 4-6 cycling for each clip
+      if (ev.clip_num === 1) activateStage(4);
+      break;
+
+    case 'clip_ready':
+      clipsDone++;
+      document.getElementById('cc-current').textContent = clipsDone;
+      appendLog('✓ Clip ready → ' + ev.path, 'done');
+      break;
+
+    case 'log':
+      if (ev.raw && ev.raw.trim()) appendLog(ev.raw, 'log');
+      break;
+
+    case 'warning':
+      if (ev.raw) appendLog(ev.raw, 'warn');
+      break;
+
+    case 'done':
+      completeStage(currentStage);
+      setProgress(100, 'All done!');
+      if (ev.success) {
+        setTimeout(() => showResults(ev.clips), 600);
+      } else {
+        showError('Pipeline finished with errors. Check the log for details.');
+        showPanel('panel-upload');
+      }
+      break;
+
+    case 'error':
+      showError(ev.message);
+      break;
+  }
+}
+
+// ── Stage management ───────────────────────────────────────
+function resetStages() {
+  currentStage = 0; clipsDone = 0; clipsTotal = 0;
+  document.getElementById('clip-counter').classList.remove('visible');
+  for (let i = 1; i <= 6; i++) {
+    const el = document.getElementById('stage-' + i);
+    el.classList.remove('active', 'done', 'error');
+  }
+  setProgress(0, 'Starting pipeline…');
+}
+
+function activateStage(n) {
+  if (currentStage && currentStage < n) completeStage(currentStage);
+  currentStage = n;
+  const el = document.getElementById('stage-' + n);
+  if (el) el.classList.add('active');
+}
+
+function completeStage(n) {
+  const el = document.getElementById('stage-' + n);
+  if (el) { el.classList.remove('active'); el.classList.add('done'); }
+}
+
+function setProgress(pct, label) {
+  document.getElementById('pp-fill').style.width = pct + '%';
+  document.getElementById('pp-pct').textContent  = pct + '%';
+  document.getElementById('pp-label').textContent = label;
+}
+
+// ── Log terminal ───────────────────────────────────────────
+function appendLog(text, cls = 'log') {
+  const out = document.getElementById('log-output');
+  const div = document.createElement('div');
+  div.className = 'log-line ' + cls;
+  // Extract timestamp prefix if present
+  const tsMatch = text.match(/^(\d+:\d+:\d+)\s+(INFO|WARNING|ERROR)?\s*(.*)/s);
+  if (tsMatch) {
+    div.innerHTML = `<span class="log-timestamp">${tsMatch[1]}</span>${escHtml(tsMatch[3])}`;
+  } else {
+    div.textContent = text;
+  }
+  out.appendChild(div);
+  // Auto-scroll to bottom
+  out.scrollTop = out.scrollHeight;
+}
+
+function clearLog() {
+  document.getElementById('log-output').innerHTML = '';
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ── Results ────────────────────────────────────────────────
+function showResults(clips) {
+  document.getElementById('result-count').textContent = clips.length;
+  const grid = document.getElementById('clips-grid');
+  grid.innerHTML = '';
+
+  if (!clips || clips.length === 0) {
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;">
+      <div class="empty-icon">📭</div>
+      <p>No clips were generated. Check the log for details.</p>
+    </div>`;
+  } else {
+    clips.forEach((clip, i) => {
+      const num   = String(i + 1).padStart(2, '0');
+      const title = clip.filename
+        .replace(/^clip_\d+_/, '')
+        .replace(/\.mp4$/i, '')
+        .replace(/_/g, ' ');
+      grid.innerHTML += `
+        <div class="clip-card">
+          <div class="clip-num-badge">#${num}</div>
+          <div class="clip-video-wrap">
+            <video src="${clip.url}" preload="metadata" playsinline></video>
+            <div class="play-overlay" onclick="togglePlay(this)">
+              <div class="play-btn">▶</div>
+            </div>
+          </div>
+          <div class="clip-info">
+            <div class="clip-title" title="${title}">${title}</div>
+            <div class="clip-meta">
+              <span>${clip.size_mb} MB</span>
+              <span class="dot"></span>
+              <span>1080×1920</span>
+              <span class="dot"></span>
+              <span>H.264</span>
+            </div>
+          </div>
+          <div class="clip-actions-row">
+            <a class="btn-download" href="${clip.url}" download="${clip.filename}">⬇ Download</a>
+            <a class="btn-preview" href="${clip.url}" target="_blank" title="Open in new tab">⛶</a>
+          </div>
+        </div>
+      `;
+    });
+  }
+
+  showPanel('panel-results');
+}
+
+function togglePlay(overlay) {
+  const video = overlay.previousElementSibling;
+  if (video.paused) {
+    video.play();
+    overlay.querySelector('.play-btn').textContent = '⏸';
+    overlay.style.opacity = '0';
+  } else {
+    video.pause();
+    overlay.querySelector('.play-btn').textContent = '▶';
+    overlay.style.opacity = '1';
+  }
+}
+
+// ── Reset ──────────────────────────────────────────────────
+function resetToUpload() {
+  selectedFile = null;
+  jobId        = null;
+  ytdlJobId    = null;
+  if (ws) { try { ws.close(); } catch(e){} ws = null; }
+
+  // Reset file drop zone
+  dropzone.classList.remove('has-file', 'drag-over');
+  document.getElementById('drop-icon').style.display = '';
+  document.getElementById('drop-title').style.display = '';
+  document.getElementById('drop-sub').style.display = '';
+  document.getElementById('drop-btn').style.display = '';
+  document.getElementById('file-info').style.display = 'none';
+  fileInput.value = '';
+
+  // Reset URL tab
+  document.getElementById('url-input').value = '';
+  document.getElementById('platform-badge').classList.remove('visible');
+  document.getElementById('dl-progress').style.display = 'none';
+  document.getElementById('dl-log').style.display = 'none';
+  document.getElementById('dl-file-ready').classList.remove('visible');
+  document.getElementById('btn-download-url').disabled = true;
+  document.getElementById('btn-download-url').textContent = '⬇ Download Video';
+  document.getElementById('btn-download-url').style.background = ''; // reset to default grad
+
+  // Reset common upload elements
+  document.getElementById('btn-generate').disabled = true;
+  document.getElementById('btn-generate').textContent = '🚀 Generate Clips';
+  document.getElementById('upload-progress').style.display = 'none';
+  document.getElementById('upload-fill').style.width = '0%';
+
+  hideError();
+  loadRecentUploads(); // Reload recent uploads list on reset
+  loadHistory();       // Reload clip history list on reset
+  showPanel('panel-upload');
+}
+
+async function loadRecentUploads() {
+  try {
+    const res = await fetch('/uploads');
+    const data = await res.json();
+    const list = document.getElementById('recent-list');
+    if (!list) return;
+    list.innerHTML = '';
+
+    if (data.uploads && data.uploads.length > 0) {
+      data.uploads.forEach(up => {
+        // Clean title for display: remove job_ prefix and clean spacing
+        let displayTitle = up.filename
+          .replace(/^job_[a-f0-9]{8}\.mp4$/, 'Downloaded Video')
+          .replace(/\.mp4$/i, '')
+          .replace(/_/g, ' ');
+        
+        const card = document.createElement('div');
+        card.className = 'recent-card';
+        card.id = `recent-job-${up.job_id}`;
+        card.onclick = () => selectRecentVideo(up.job_id, up.filename);
+        card.innerHTML = `
+          <div class="recent-card-icon">🎞️</div>
+          <div class="recent-card-body">
+            <div class="recent-card-title" title="${up.filename}">${displayTitle}</div>
+            <div class="recent-card-size">${up.size_mb} MB</div>
+          </div>
+        `;
+        list.appendChild(card);
+      });
+    } else {
+      list.innerHTML = '<div class="empty-sidebar-list">No downloaded videos yet</div>';
+    }
+  } catch(e) {
+    console.error('Failed to load recent uploads:', e);
+  }
+}
+
+async function loadHistory() {
+  try {
+    const res = await fetch('/history');
+    const data = await res.json();
+    const list = document.getElementById('history-list');
+    if (!list) return;
+    list.innerHTML = '';
+
+    if (data.history && data.history.length > 0) {
+      data.history.forEach(item => {
+        const displayTitle = item.filename.replace(/\.mp4$/i, '').replace(/_/g, ' ');
+        
+        // Format timestamp
+        const date = new Date(item.created * 1000);
+        const formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+
+        const card = document.createElement('div');
+        card.className = 'history-card';
+        card.onclick = () => showHistoricalClips(item.job_id, item.filename);
+        card.innerHTML = `
+          <div class="history-card-icon">🎬</div>
+          <div class="history-card-body">
+            <div class="history-card-title" title="${item.filename}">${displayTitle}</div>
+            <div class="history-card-meta">
+              <span>${formattedDate}</span>
+              <strong style="color: var(--purple-light);">${item.clip_count} clips</strong>
+            </div>
+          </div>
+        `;
+        list.appendChild(card);
+      });
+    } else {
+      list.innerHTML = '<div class="empty-sidebar-list">No processed videos yet</div>';
+    }
+  } catch(e) {
+    console.error('Failed to load history:', e);
+  }
+}
+
+async function showHistoricalClips(jid, filename) {
+  try {
+    const res = await fetch(`/history/${jid}/clips`);
+    const data = await res.json();
+    
+    // Clear recent highlights since we are viewing finished clips
+    document.querySelectorAll('.recent-card').forEach(c => c.classList.remove('selected'));
+    
+    // Set video title on results page
+    const titleEl = document.getElementById('results-video-title');
+    if (titleEl) {
+      titleEl.textContent = filename.replace(/\.mp4$/i, '').replace(/_/g, ' ');
+    }
+    
+    showResults(data.clips || []);
+  } catch(e) {
+    showError('Failed to load historical clips: ' + e.message);
+  }
+}
+
+function selectRecentVideo(jid, filename) {
+  // Clear other selections
+  document.querySelectorAll('.recent-card').forEach(c => c.classList.remove('selected'));
+
+  // Mark selected
+  const selectedCard = document.getElementById(`recent-job-${jid}`);
+  if (selectedCard) selectedCard.classList.add('selected');
+
+  // Set state
+  ytdlJobId = jid;
+  selectedFile = null; // deactivate local file mode
+
+  // Reset file upload drop zone state if a local file was selected
+  if (dropzone.classList.contains('has-file')) {
+    dropzone.classList.remove('has-file');
+    document.getElementById('drop-icon').style.display = '';
+    document.getElementById('drop-title').style.display = '';
+    document.getElementById('drop-sub').style.display = '';
+    document.getElementById('drop-btn').style.display = '';
+    document.getElementById('file-info').style.display = 'none';
+    fileInput.value = '';
+  }
+
+  // Update main generate button
+  document.getElementById('btn-generate').disabled = false;
+  document.getElementById('btn-generate').textContent = `🚀 Generate Clips from Selected Video`;
+}
+
+// Initial loads
+loadRecentUploads();
+loadHistory();
+
+function openOutputFolder() {
+  // Can't open OS folder from browser; just show message
+  alert('Output folder: ' + window.location.origin.replace('http://','').replace('localhost:7842','') + '\nc:\\Users\\Qwen\\Obscura Clips\\output\\');
+}
+
+// ── Error handling ─────────────────────────────────────────
+function showError(msg) {
+  const b = document.getElementById('error-banner');
+  document.getElementById('error-text').textContent = msg;
+  b.style.display = 'block';
+}
+function hideError() {
+  document.getElementById('error-banner').style.display = 'none';
+}
+</script>
+
+</body>
+</html>
+
+<!-- MISSING LINE 1786 -->
+<!-- MISSING LINE 1787 -->
+<!-- MISSING LINE 1788 -->
+<!-- MISSING LINE 1789 -->
+<!-- MISSING LINE 1790 -->
+<!-- MISSING LINE 1791 -->
+<!-- MISSING LINE 1792 -->
+<!-- MISSING LINE 1793 -->
+<!-- MISSING LINE 1794 -->
+  }
+}
+
+function selectRecentVideo(jid, filename) {
+  // Clear other selections
+  document.querySelectorAll('.recent-card').forEach(c => c.classList.remove('selected'));
+
+  // Mark selected
+  const selectedCard = document.getElementById(`recent-job-${jid}`);
+  if (selectedCard) selectedCard.classList.add('selected');
+
+  // Set state
+  ytdlJobId = jid;
+  selectedFile = null; // deactivate local file mode
+
+  // Reset file upload drop zone state if a local file was selected
+  if (dropzone.classList.contains('has-file')) {
+    dropzone.classList.remove('has-file');
+    document.getElementById('drop-icon').style.display = '';
+    document.getElementById('drop-title').style.display = '';
+    document.getElementById('drop-sub').style.display = '';
+    document.getElementById('drop-btn').style.display = '';
+    document.getElementById('file-info').style.display = 'none';
+    fileInput.value = '';
+  }
+
+  // Update main generate button
+  document.getElementById('btn-generate').disabled = false;
+  document.getElementById('btn-generate').textContent = `🚀 Generate Clips from Selected Video`;
+}
+
+// Initial loads
+loadRecentUploads();
+loadHistory();
+
+function openOutputFolder() {
+  // Can't open OS folder from browser; just show message
+  alert('Output folder: ' + window.location.origin.replace('http://','').replace('localhost:7842','') + '\nc:\\Users\\Qwen\\Obscura Clips\\output\\');
+}
+
+// ── Error handling ─────────────────────────────────────────
+function showError(msg) {
+  const b = document.getElementById('error-banner');
+  document.getElementById('error-text').textContent = msg;
+  b.style.display = 'block';
+}
+function hideError() {
+  document.getElementById('error-banner').style.display = 'none';
+}
+
+function copyToClipboard(btn, text) {
+<!-- MISSING LINE 1846 -->
+<!-- MISSING LINE 1847 -->
+<!-- MISSING LINE 1848 -->
+<!-- MISSING LINE 1849 -->
+    btn.style.color = 'var(--green)';
+    setTimeout(() => {
+      btn.innerHTML = originalText;
+      btn.style.borderColor = '';
+      btn.style.color = '';
+    }, 2000);
+  }).catch(err => {
+    alert('Failed to copy: ' + err);
+  });
+}
+
+function updateBrollUI(enabled) {
+  const toggle = document.getElementById('broll-toggle');
+  const span = toggle.nextElementSibling;
+  const keyGroup = document.getElementById('broll-key-group');
+  if (!toggle || !span || !keyGroup) return;
+  
+  toggle.checked = enabled;
+  span.style.backgroundColor = enabled ? 'var(--purple)' : 'var(--bg3)';
+  keyGroup.style.display = enabled ? 'block' : 'none';
+  localStorage.setItem('broll_enabled', enabled ? 'true' : 'false');
+}
+
+async function checkNvidiaKey() {
+  try {
+    const res = await fetch('/api/check-nvidia-key');
+    const data = await res.json();
+    const badge = document.getElementById('nvidia-status-badge');
+    const input = document.getElementById('nvidia-key-input');
+    if (data.is_set) {
+      badge.innerHTML = '<span style="background: rgba(129,201,149,0.15); color: var(--green); border: 1px solid rgba(129,201,149,0.3); padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 500;">✓ Configured</span>';
+      input.value = data.masked_key;
+    } else {
+      badge.innerHTML = '<span style="background: rgba(242,139,130,0.15); color: var(--red); border: 1px solid rgba(242,139,130,0.3); padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 500;">⚠️ Not Set</span>';
+    }
+  } catch(e) {
+    console.error("Failed to check Nvidia key:", e);
+  }
+}
+
+async function saveNvidiaKey() {
+  const key = document.getElementById('nvidia-key-input').value.trim();
+  if (!key) {
+    alert("Please enter a key first.");
+    return;
+  }
+  const btn = document.getElementById('btn-save-nvidia');
+  const origText = btn.textContent;
+  btn.textContent = "Saving...";
+  btn.disabled = true;
+  
+  try {
+    const res = await fetch('/api/save-nvidia-key', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key })
+    });
+    const data = await res.json();
+    if (data.success) {
+      alert("NVIDIA API Key saved permanently!");
+      checkNvidiaKey();
+    } else {
+      alert("Failed: " + data.message);
+    }
+  } catch(e) {
+    alert("Network error: " + e.message);
+  } finally {
+    btn.textContent = origText;
+    btn.disabled = false;
+  }
+}
+
+</script>
+
+</body>
+</html>
+
